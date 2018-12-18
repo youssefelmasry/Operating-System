@@ -4,15 +4,16 @@
 #include <sstream>
 #include <vector>
 #include <cstdlib>
-// #include <algorithm>
+#include <algorithm>
 #define MAX_SIZE 10
 using namespace std;
 
 
-char process_name[MAX_SIZE]; // names of the processes
+// vector <char> process_name; // Processes Names
 short int num_line = 0;
 float Throughput=0;
-short int Arrival_Time[MAX_SIZE]={}, burst_time[MAX_SIZE]={}, Deadline[MAX_SIZE]={};
+// vector <short int> Arrival_Time, burst_time, Deadline; // Processes Info
+ ;
 
 // Struct for each policy to have it's own info
 struct Metrics{
@@ -21,7 +22,14 @@ struct Metrics{
 
 	float AWT=0, ART=0, ATT=0;
 };
-
+// Struct for each process to have it's own info
+struct Process
+{
+	short int Arrival_Time = 0, burst_time = 0, Deadline = 0;
+	char process_name;
+};
+// vector of all processes info
+vector <Process> processes;
 
 /*Funcitons prototype*/
 
@@ -29,6 +37,8 @@ struct Metrics{
 void load_file(string filename);
 void parse(vector <string> vec);
 float throughput();
+// int find_element(int);
+
 // scheduler polices functions 
 Metrics FCFS(Metrics); // First Come First Serve policy
 Metrics SJF(Metrics); // Shortest Job First
@@ -37,9 +47,13 @@ int main()
 {
 	load_file("in.txt");
 	Throughput = throughput();
+
 	Metrics fcfs;
+	Metrics sjf;
+
 	fcfs = FCFS(fcfs);
 	cout<<fcfs.wait_time[2]<<endl;
+
 
 	return 0;
 }
@@ -68,24 +82,28 @@ void load_file(string filename)
 void parse(vector <string> vec)
 { 
 	vector <string> :: iterator i;
-	short int j=0;
 
     for (i = vec.begin(); i != vec.end(); i++)
     {	
 		stringstream is(*i);
 		string token = "";
-		// put each line content in the corresponding array
+		// put each line content in the corresponding vector
+			Process p;
 
 			getline(is, token,',');
-		   	process_name[j] = token[0]; // char to string
+			// string to chars
+		   	p.process_name = token[0];
+
 		   	getline(is, token,',');
-		   	Arrival_Time[j] = stoi(token);
-		   	Arrival_Time[1] = 4;
+		   	p.Arrival_Time = stoi(token);
+
 		   	getline(is, token,',');
-		   	burst_time[j] = stoi(token);
+		   	p.burst_time = stoi(token);
+
 		   	getline(is, token,',');
-		   	Deadline[j] = stoi(token);
-		   	j++;
+		   	p.Deadline = stoi(token);
+
+		   	processes.push_back(p);
     }
     // sort(begin(Arrival_Time), end(Arrival_Time));
 }
@@ -96,10 +114,22 @@ float throughput()
 	float tmp = 0.0;
 	for(i = 0; i<num_line; i++)
 	{
-		tmp += burst_time[i];
+		tmp += processes[i].burst_time;
 	}
 	return num_line/tmp;
 }
+
+// int find_element(int elem)
+// {
+// 	int pos = 0;
+// 	for(auto i : burst_time){
+// 		if (i == elem)
+// 		{
+// 			return pos;
+// 		}
+// 		pos++;
+// 	}
+// }
 
 Metrics FCFS(Metrics fcfs)
 {
@@ -110,9 +140,9 @@ Metrics FCFS(Metrics fcfs)
 	for(i = 1; i<num_line; i++)
 	{
 		for(j=0; j<i; j++){
-			fcfs.wait_time[i] += burst_time[j] ;
+			fcfs.wait_time[i] += processes[j].burst_time ;
 		}
-		fcfs.wait_time[i] -= Arrival_Time[i];
+		fcfs.wait_time[i] -= processes[i].Arrival_Time;
 		// cout<<Arrival_Time[i]<<endl;
 		fcfs.AWT+=fcfs.wait_time[i];
 
@@ -122,7 +152,7 @@ Metrics FCFS(Metrics fcfs)
 	// Calculating turn around time
 	for(i = 0; i<num_line; i++)
 	{
-		fcfs.Turn_time[i] = burst_time[i] + fcfs.wait_time[i];
+		fcfs.Turn_time[i] = processes[i].burst_time + fcfs.wait_time[i];
 		fcfs.ATT += fcfs.Turn_time[i];
 	}
 	
@@ -131,4 +161,10 @@ Metrics FCFS(Metrics fcfs)
 	fcfs.ATT /= num_line;
 
 	return fcfs;
+}
+
+Metrics SJF(Metrics sjf)
+{
+	
+
 }
