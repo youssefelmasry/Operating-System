@@ -35,25 +35,21 @@ void load_file(string filename);
 void parse(vector <string> vec);
 float throughput();
 
-bool burstTime(Process& a, Process& b); // comparison function to sort struct
+bool Sort_burstTime(Process& a, Process& b); // comparison function to sort struct
 // scheduler polices functions 
 Metrics FCFS(Metrics, vector<Process> p); // First Come First Serve policy
 Metrics SJF(Metrics, vector<Process> p); // Shortest Job First
+Metrics SRTF(Metrics, vector<Process> p); // Shortest Remaining Time First
 
 int main()
 {
 	load_file("in.txt");
 	Throughput = throughput();
 
-	Metrics fcfs;
-	Metrics sjf;
+	Metrics srtf;
 
-	fcfs = FCFS(fcfs, Processes);
-	cout<<fcfs.AWT<<endl;
-
-	sjf = SJF(sjf, Processes);
-	cout<<sjf.AWT<<endl;
-
+	srtf = SRTF(srtf, Processes);
+	cout<<srtf.ATT<<endl;
 
 	return 0;
 }
@@ -105,7 +101,6 @@ void parse(vector <string> vec)
 
 		   	Processes.push_back(p);
     }
-    // sort(begin(Arrival_Time), end(Arrival_Time));
 }
 
 float throughput()
@@ -119,44 +114,12 @@ float throughput()
 	return num_line/tmp;
 }
 
-bool burstTime(Process& a, Process& b) // comparison function
+bool Sort_burstTime(Process& a, Process& b) // comparison function
 {
 	return a.burst_time < b.burst_time;
 }
 
-Metrics FCFS(Metrics fcfs, vector<Process> p)
-{
-	short int i,j;
-	vector<Process> processes;
-	processes = p;
-	// Calculating waiting time and response time. i.e: the response time equal waiting time in fcfs policy
-	// starting from 1 (second process) because the first one does not wait
-	for(i = 1; i<num_line; i++)
-	{
-		for(j=0; j<i; j++){
-			processes[i].wait_time += processes[j].burst_time ;
-		}
-		processes[i].wait_time -= processes[i].Arrival_Time;
-		fcfs.AWT+=processes[i].wait_time;
-
-		processes[i].response_time = processes[i].wait_time;
-		fcfs.ART += processes[i].response_time;
-	}
-	// Calculating turn around time
-	for(i = 0; i<num_line; i++)
-	{
-		processes[i].Turn_time = processes[i].burst_time + processes[i].wait_time;
-		fcfs.ATT += processes[i].Turn_time;
-	}
-	
-	fcfs.AWT /= num_line;
-	fcfs.ART /= num_line;
-	fcfs.ATT /= num_line;
-
-	return fcfs;
-}
-
-Metrics SJF(Metrics sjf, vector<Process> p)
+Metrics SRTF(Metrics srtf, vector<Process> p)
 {
 	vector <Process> pq; // priority queue according to burst time
 	short int btime = 0, i = 1; // accumlating burst time
@@ -175,15 +138,44 @@ Metrics SJF(Metrics sjf, vector<Process> p)
 			{
 				pq.push_back(processes[i]); i++;
 			}
-			Process ptemp;// temporal object to save the current process
-			sort(pq.begin(),pq.end(), burstTime); // sort the vector as it is a priority queue 
-			ptemp = pq[0]; pq.erase(pq.begin()); // save the first element from vector and pop it (as q.front() and q.pop())
-			ptemp.wait_time = btime - ptemp.Arrival_Time; // calculate waiting time for current process
-			ptemp.Turn_time = ptemp.wait_time + ptemp.burst_time; // calculate turn around time for current process
-			vec.push_back(ptemp); // push back to fininshed process queue (vector vec)
-			btime += ptemp.burst_time; // increase the burst time to be used by the next process
 
-			// check if after the process finished how many other processes had arrived
+			Process ptemp;// temporal object to save the current process
+			sort(pq.begin(),pq.end(), Sort_burstTime); // sort the vector as it is a priority queue 
+			// check if the current process's burst time is 1 to add it to the fininshed vector
+			if(pq[0].burst_time == 1)
+			{
+				ptemp = pq[0]; pq.erase(pq.begin()); // save the first element from vector and pop it (as q.front() and q.pop())
+				ptemp.wait_time += btime - ptemp.Arrival_Time; // calculate waiting time for current process
+				ptemp.Turn_time += ptemp.wait_time + ptemp.burst_time; // calculate turn around time for current process
+				vec.push_back(ptemp); // push back to fininshed process queue (vector vec)
+				btime ++; // increase the burst time to be used by the next process
+			}
+			// if not, proceed
+			else
+			{
+				ptemp = pq[0]; pq.erase(pq.begin());
+				ptemp.wait_time += btime - ptemp.Arrival_Time; 
+				ptemp.Turn_time += ptemp.wait_time + ptemp.burst_time;
+				// increament the btime while the currect process's burst time is less than the arrived smallest one's burst time
+				while((ptemp.burst_time <= pq[0].burst_time) && ptemp.burst_time)
+				{
+					btime++;
+
+					while(processes[i].Arrival_Time <= btime)
+						{	
+							pq.push_back(processes[i]); i++;
+							sort(pq.begin(),pq.end(), Sort_burstTime);
+						}
+					ptemp.burst_time--;
+				}
+				// if process finished push it in the finished vector
+				if(ptemp.burst_time == 0)
+					vec.push_back(ptemp);
+				// else push it back in the priority queue
+				else
+					pq.push_back(ptemp);
+			}	
+			// check which process has arrived and push it in the priority queue
 			while(processes[i].Arrival_Time <= btime)
 			{	
 				pq.push_back(processes[i]); i++;
@@ -193,10 +185,10 @@ Metrics SJF(Metrics sjf, vector<Process> p)
 		{	// the same instruction BUT after pushing all the processes in the queue but not all are finished
 
 			Process ptemp;
-			sort(pq.begin(),pq.end(), burstTime);
+			sort(pq.begin(),pq.end(), Sort_burstTime);
 			ptemp = pq[0]; pq.erase(pq.begin());
-			ptemp.wait_time = btime - ptemp.Arrival_Time;
-			ptemp.Turn_time = ptemp.wait_time + ptemp.burst_time;
+			ptemp.wait_time += btime - ptemp.Arrival_Time;
+			ptemp.Turn_time += ptemp.wait_time + ptemp.burst_time;
 			vec.push_back(ptemp);
 			btime += ptemp.burst_time;
 		}
@@ -205,14 +197,14 @@ Metrics SJF(Metrics sjf, vector<Process> p)
 	// calculating AWT, ATT and ART
 	for(auto i : vec)
 	{
-		sjf.AWT += i.wait_time;
-		sjf.ATT += i.Turn_time;
-		sjf.ART += i.response_time;
+		srtf.AWT += i.wait_time;
+		srtf.ATT += i.Turn_time;
+		//srtf.ART += i.response_time;
 	}
 
-	sjf.AWT /= num_line;
-	sjf.ATT /= num_line;
-	sjf.ART /= num_line;
+	srtf.AWT /= num_line;
+	srtf.ATT /= num_line;
+	//srtf.ART /= num_line;
 
-	return sjf;
+	return srtf;
 }
