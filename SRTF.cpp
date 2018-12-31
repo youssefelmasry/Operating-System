@@ -21,8 +21,14 @@ struct Metrics{
 // Struct for each process to have it's own info
 struct Process
 {
+	short int start_time = 0, end_time = 0;
+
 	short int wait_time = 0, response_time = 0, Turn_time = 0;
+
 	short int Arrival_Time = 0, burst_time = 0, Deadline = 0;
+
+	bool flag = true;
+
 	char process_name;
 };
 // vector of all processes info
@@ -129,6 +135,8 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 	processes = p;
 
 	pq.push_back(processes[0]);
+	processes[0].flag = false;
+
 	while(!pq.empty())
 	{
 		if (i < num_line)
@@ -140,37 +148,64 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 			}
 
 			Process ptemp;// temporal object to save the current process
-			sort(pq.begin(),pq.end(), Sort_burstTime); // sort the vector as it is a priority queue 
-			// check if the current process's burst time is 1 to add it to the fininshed vector
-			if(pq[0].burst_time == 1)
+			sort(pq.begin(),pq.end(), Sort_burstTime); // sort the vector as it is a priority queue
+
+			ptemp = pq[0]; pq.erase(pq.begin()); // save the first element from vector and pop it (as q.front() and q.pop())
+			
+			if(ptemp.flag)
 			{
-				ptemp = pq[0]; pq.erase(pq.begin()); // save the first element from vector and pop it (as q.front() and q.pop())
-				ptemp.wait_time += btime - ptemp.Arrival_Time; // calculate waiting time for current process
-				ptemp.Turn_time += ptemp.wait_time + ptemp.burst_time; // calculate turn around time for current process
+			 	ptemp.start_time = btime;
+
+			 	ptemp.flag = false;
+
+			 	ptemp.response_time = ptemp.start_time - ptemp.Arrival_Time; // calculate the response time
+			}
+
+			ptemp.wait_time += btime - ptemp.Arrival_Time; // calculate waiting time for current process
+			
+			ptemp.Turn_time += ptemp.wait_time + ptemp.burst_time; // calculate turn around time for current process
+
+			// check if the current process's burst time is 1 to add it to the fininshed vector
+			if(ptemp.burst_time == 1)
+			{
+				ptemp.end_time = btime; // set then end time as the current total burst time before pushing the process to the fininshed queue
+
 				vec.push_back(ptemp); // push back to fininshed process queue (vector vec)
+
 				btime ++; // increase the burst time to be used by the next process
 			}
 			// if not, proceed
 			else
 			{
-				ptemp = pq[0]; pq.erase(pq.begin());
-				ptemp.wait_time += btime - ptemp.Arrival_Time; 
-				ptemp.Turn_time += ptemp.wait_time + ptemp.burst_time;
 				// increament the btime while the currect process's burst time is less than the arrived smallest one's burst time
 				while((ptemp.burst_time <= pq[0].burst_time) && ptemp.burst_time)
 				{
+					if(pq[0].flag && (ptemp.burst_time == pq[0].burst_time))
+					{
+					 	pq[0].start_time = btime;
+
+					 	pq[0].flag = false;
+
+					 	pq[0].response_time = pq[0].start_time - pq[0].Arrival_Time; // calculate the response time
+					}
 					btime++;
 
 					while(processes[i].Arrival_Time <= btime)
 						{	
 							pq.push_back(processes[i]); i++;
+
 							sort(pq.begin(),pq.end(), Sort_burstTime);
 						}
+
 					ptemp.burst_time--;
 				}
 				// if process finished push it in the finished vector
 				if(ptemp.burst_time == 0)
+				{
+					ptemp.end_time = btime; // set then end time as the current total burst time before pushing the process to the fininshed queue
+					
 					vec.push_back(ptemp);
+				}
 				// else push it back in the priority queue
 				else
 					pq.push_back(ptemp);
@@ -186,10 +221,26 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 
 			Process ptemp;
 			sort(pq.begin(),pq.end(), Sort_burstTime);
+
 			ptemp = pq[0]; pq.erase(pq.begin());
+
+			if(ptemp.flag)
+			{
+			 	ptemp.start_time = btime;
+
+			 	ptemp.flag = false;
+
+			 	ptemp.response_time = ptemp.start_time - ptemp.Arrival_Time; // calculate the response time
+			}
+
 			ptemp.wait_time += btime - ptemp.Arrival_Time;
+
 			ptemp.Turn_time += ptemp.wait_time + ptemp.burst_time;
+
+			ptemp.end_time = btime; // set then end time as the current total burst time before pushing the process to the fininshed queue
+
 			vec.push_back(ptemp);
+
 			btime += ptemp.burst_time;
 		}
 	}
@@ -197,14 +248,15 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 	// calculating AWT, ATT and ART
 	for(auto i : vec)
 	{
+		cout<< i.process_name<<'\t'<<i.start_time<<endl;
 		srtf.AWT += i.wait_time;
 		srtf.ATT += i.Turn_time;
-		//srtf.ART += i.response_time;
+		srtf.ART += i.response_time;
 	}
 
 	srtf.AWT /= num_line;
 	srtf.ATT /= num_line;
-	//srtf.ART /= num_line;
+	srtf.ART /= num_line;
 
 	return srtf;
 }
