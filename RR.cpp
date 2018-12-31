@@ -24,10 +24,11 @@ struct Process
 	short int start_time = 0, end_time = 0;
 
 	short int wait_time = 0, response_time = 0, Turn_time = 0;
-	
+
 	short int Arrival_Time = 0, burst_time = 0, Deadline = 0;
 	
 	bool flag = true;
+	
 	char process_name;
 };
 // vector of all processes info
