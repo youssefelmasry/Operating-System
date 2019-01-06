@@ -21,8 +21,16 @@ struct Metrics{
 // Struct for each process to have it's own info
 struct Process
 {
+	short int start_time = 0, end_time = 0;
+
 	short int wait_time = 0, response_time = 0, Turn_time = 0;
+
 	short int Arrival_Time = 0, burst_time = 0, Deadline = 0;
+
+	short int org_btime = 0;
+
+	bool flag = true;
+
 	char process_name;
 };
 // vector of all processes info
@@ -95,13 +103,13 @@ void parse(vector <string> vec)
 
 		   	getline(is, token,',');
 		   	p.burst_time = stoi(token);
+		   	p.org_btime = stoi(token);
 
 		   	getline(is, token,',');
 		   	p.Deadline = stoi(token);
 
 		   	Processes.push_back(p);
     }
-    // sort(begin(Arrival_Time), end(Arrival_Time));
 }
 
 float throughput()
@@ -130,6 +138,8 @@ Metrics SJF(Metrics sjf, vector<Process> p)
 	processes = p;
 
 	pq.push_back(processes[0]);
+	processes[0].flag = false;
+
 	while(!pq.empty())
 	{
 		if (i < num_line)
@@ -140,15 +150,30 @@ Metrics SJF(Metrics sjf, vector<Process> p)
 				pq.push_back(processes[i]); i++;
 			}
 			Process ptemp;// temporal object to save the current process
+
 			sort(pq.begin(),pq.end(), burstTime); // sort the vector as it is a priority queue 
+
 			ptemp = pq[0]; pq.erase(pq.begin()); // save the first element from vector and pop it (as q.front() and q.pop())
-			ptemp.wait_time = btime - ptemp.Arrival_Time; // calculate waiting time for current process
-			ptemp.Turn_time = ptemp.wait_time + ptemp.burst_time; // calculate turn around time for current process
-			vec.push_back(ptemp); // push back to fininshed process queue (vector vec)
+
+			if(ptemp.flag)
+			{
+			 	ptemp.start_time = btime;
+
+			 	ptemp.flag = false;
+
+			 	ptemp.response_time = ptemp.start_time - ptemp.Arrival_Time; // calculate the response time
+			}			
+
 			btime += ptemp.burst_time; // increase the burst time to be used by the next process
 
+			ptemp.end_time = btime; // set then end time as the current total burst time before pushing the process to the fininshed queue
+
+			vec.push_back(ptemp); // push back to fininshed process queue (vector vec)
+
+			
+
 			// check if after the process finished how many other processes had arrived
-			while(processes[i].Arrival_Time <= btime)
+			while(processes[i].Arrival_Time <= btime && i < num_line)
 			{	
 				pq.push_back(processes[i]); i++;
 			}	
@@ -157,20 +182,41 @@ Metrics SJF(Metrics sjf, vector<Process> p)
 		{	// the same instruction BUT after pushing all the processes in the queue but not all are finished
 
 			Process ptemp;
+
 			sort(pq.begin(),pq.end(), burstTime);
+
 			ptemp = pq[0]; pq.erase(pq.begin());
-			ptemp.wait_time = btime - ptemp.Arrival_Time;
-			ptemp.Turn_time = ptemp.wait_time + ptemp.burst_time;
+
+			if(ptemp.flag)
+			{
+			 	ptemp.start_time = btime;
+
+			 	ptemp.flag = false;
+
+			 	ptemp.response_time = ptemp.start_time - ptemp.Arrival_Time; // calculate the response time
+			}			
+
+			btime += ptemp.burst_time; 
+
+			ptemp.end_time = btime; // set then end time as the current total burst time before pushing the process to the fininshed queue
+
 			vec.push_back(ptemp);
-			btime += ptemp.burst_time;
+
+			
 		}
 	}
 
 	// calculating AWT, ATT and ART
 	for(auto i : vec)
 	{
-		sjf.AWT += i.wait_time;
-		sjf.ATT += i.Turn_time;
+		cout<< i.process_name<<'\t'<<i.start_time<<'\t'<<i.end_time<<endl;
+		
+		short int tat = i.end_time - i.Arrival_Time;
+
+		sjf.ATT += tat;
+
+		sjf.AWT += tat-i.org_btime;
+		
 		sjf.ART += i.response_time;
 	}
 
