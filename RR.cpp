@@ -26,9 +26,11 @@ struct Process
 	short int wait_time = 0, response_time = 0, Turn_time = 0;
 
 	short int Arrival_Time = 0, burst_time = 0, Deadline = 0;
-	
+
+	short int org_btime = 0;
+
 	bool flag = true;
-	
+
 	char process_name;
 };
 // vector of all processes info
@@ -56,7 +58,7 @@ int main()
 	short int q_time = 1;
 
 	rr = RR(rr, Processes, q_time);
-	cout<<rr.ART<<endl;
+	cout<<rr.AWT<<endl;
 
 	return 0;
 }
@@ -102,6 +104,7 @@ void parse(vector <string> vec)
 
 		   	getline(is, token,',');
 		   	p.burst_time = stoi(token);
+		   	p.org_btime = stoi(token);
 
 		   	getline(is, token,',');
 		   	p.Deadline = stoi(token);
@@ -188,7 +191,7 @@ Metrics RR(Metrics RR, vector<Process> p, short int quantam_time)
 			}	
 
 			// check which process has arrived and push it in the priority queue
-			while(processes[i].Arrival_Time <= btime)
+			while(processes[i].Arrival_Time <= btime && i < num_line)
 			{	
 				pq.push_back(processes[i]); i++;
 			}	
