@@ -27,6 +27,8 @@ struct Process
 
 	short int Arrival_Time = 0, burst_time = 0, Deadline = 0;
 
+	short int org_btime = 0;
+
 	bool flag = true;
 
 	char process_name;
@@ -55,7 +57,7 @@ int main()
 	Metrics srtf;
 
 	srtf = SRTF(srtf, Processes);
-	cout<<srtf.ATT<<endl;
+	cout<<srtf.AWT<<endl;
 
 	return 0;
 }
@@ -101,6 +103,7 @@ void parse(vector <string> vec)
 
 		   	getline(is, token,',');
 		   	p.burst_time = stoi(token);
+		   	p.org_btime = stoi(token);
 
 		   	getline(is, token,',');
 		   	p.Deadline = stoi(token);
@@ -151,7 +154,7 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 			sort(pq.begin(),pq.end(), Sort_burstTime); // sort the vector as it is a priority queue
 
 			ptemp = pq[0]; pq.erase(pq.begin()); // save the first element from vector and pop it (as q.front() and q.pop())
-			
+
 			if(ptemp.flag)
 			{
 			 	ptemp.start_time = btime;
@@ -160,10 +163,6 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 
 			 	ptemp.response_time = ptemp.start_time - ptemp.Arrival_Time; // calculate the response time
 			}
-
-			ptemp.wait_time += btime - ptemp.Arrival_Time; // calculate waiting time for current process
-			
-			ptemp.Turn_time += ptemp.wait_time + ptemp.burst_time; // calculate turn around time for current process
 
 			// check if the current process's burst time is 1 to add it to the fininshed vector
 			if(ptemp.burst_time == 1)
@@ -190,7 +189,7 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 					}
 					btime++;
 
-					while(processes[i].Arrival_Time <= btime)
+					while(processes[i].Arrival_Time <= btime && i+1 < num_line)
 						{	
 							pq.push_back(processes[i]); i++;
 
@@ -211,7 +210,7 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 					pq.push_back(ptemp);
 			}	
 			// check which process has arrived and push it in the priority queue
-			while(processes[i].Arrival_Time <= btime)
+			while(processes[i].Arrival_Time <= btime && i < num_line)
 			{	
 				pq.push_back(processes[i]); i++;
 			}	
@@ -232,28 +231,28 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 
 			 	ptemp.response_time = ptemp.start_time - ptemp.Arrival_Time; // calculate the response time
 			}
-
-			ptemp.wait_time += btime - ptemp.Arrival_Time;
-
-			ptemp.Turn_time += ptemp.wait_time + ptemp.burst_time;
+			
+			btime += ptemp.burst_time;
 
 			ptemp.end_time = btime; // set then end time as the current total burst time before pushing the process to the fininshed queue
 
 			vec.push_back(ptemp);
-
-			btime += ptemp.burst_time;
 		}
 	}
 
 	// calculating AWT, ATT and ART
 	for(auto i : vec)
 	{
-		cout<< i.process_name<<'\t'<<i.start_time<<endl;
-		srtf.AWT += i.wait_time;
-		srtf.ATT += i.Turn_time;
+		cout<< i.process_name<<'\t'<<i.start_time<<'\t'<<i.end_time<<endl;
+		
+		short int tat = i.end_time - i.Arrival_Time;
+
+		srtf.ATT += tat;
+
+		srtf.AWT += tat-i.org_btime;
+		
 		srtf.ART += i.response_time;
 	}
-
 	srtf.AWT /= num_line;
 	srtf.ATT /= num_line;
 	srtf.ART /= num_line;
