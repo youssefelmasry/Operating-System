@@ -168,9 +168,6 @@ Metrics RR(Metrics RR, vector<Process> p, short int quantam_time)
 			// check if the current process's burst time is less than or equal the quantum time to add it to the fininshed vector
 			if(ptemp.burst_time <=  quantam_time)
 			{
-				ptemp.wait_time = btime - ptemp.Arrival_Time - ptemp.wait_time; // calculate waiting time for current process
-
-				ptemp.Turn_time = ptemp.wait_time + ptemp.burst_time;  // calculate turn around time for current process
 
 				btime += ptemp.burst_time; // increase the burst time by the remaining burst time to be used by the next process
 
@@ -181,7 +178,6 @@ Metrics RR(Metrics RR, vector<Process> p, short int quantam_time)
 			// if not, proceed
 			else
 			{
-				ptemp.wait_time += quantam_time; // to remove it later (the number of running time)
 
 				ptemp.burst_time -= quantam_time; // decrease the burst time by quantum time
 
@@ -214,10 +210,6 @@ Metrics RR(Metrics RR, vector<Process> p, short int quantam_time)
 			
 			if(ptemp.burst_time <=  quantam_time)
 			{
-				ptemp.wait_time = btime - ptemp.Arrival_Time - ptemp.wait_time;
-
-				ptemp.Turn_time = ptemp.wait_time + ptemp.burst_time;  
-
 				btime += ptemp.burst_time; 
 
 				ptemp.end_time = btime;
@@ -227,8 +219,8 @@ Metrics RR(Metrics RR, vector<Process> p, short int quantam_time)
 			// if not, proceed
 			else
 			{
-				ptemp.wait_time += quantam_time;
 				ptemp.burst_time -= quantam_time;
+
 				btime += quantam_time;
 
 				pq.push_back(ptemp);
@@ -237,10 +229,20 @@ Metrics RR(Metrics RR, vector<Process> p, short int quantam_time)
 	}
 	
 	// calculating AWT, ATT and ART
+	
+	// Turn around time = completion time - arrival time
+	// Waiting time = Turn around time - burst time
+
 	for(auto i : vec)
 	{
-		RR.AWT += i.wait_time;
-		RR.ATT += i.Turn_time;
+		cout<< i.process_name<<'\t'<<i.start_time<<'\t'<<i.end_time<<endl;
+		
+		short int tat = i.end_time - i.Arrival_Time;
+
+		RR.ATT += tat;
+
+		RR.AWT += tat-i.org_btime;
+		
 		RR.ART += i.response_time;
 	}
 	RR.AWT /= num_line;
