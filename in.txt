@@ -1,0 +1,8 @@
+Task Name,Arrival Time,Burst Time,Deadline
+A,0,5,20
+B,0,3,30
+C,2,1,40
+D,4,2,10
+E,5,4,30
+F,6,3,40
+G,8,2,50
