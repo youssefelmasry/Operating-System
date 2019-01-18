@@ -5,7 +5,7 @@
 #include <vector>
 #include <cstdlib>
 #include <algorithm>
-#define MAX_SIZE 10
+
 using namespace std;
 
 
@@ -51,7 +51,7 @@ Metrics SRTF(Metrics, vector<Process> p); // Shortest Remaining Time First
 
 int main()
 {
-	load_file("in.txt");
+	load_file("in2.txt");
 	Throughput = throughput();
 
 	Metrics srtf;
@@ -152,7 +152,6 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 
 			Process ptemp;// temporal object to save the current process
 			sort(pq.begin(),pq.end(), Sort_burstTime); // sort the vector as it is a priority queue
-
 			ptemp = pq[0]; pq.erase(pq.begin()); // save the first element from vector and pop it (as q.front() and q.pop())
 
 			if(ptemp.flag)
@@ -167,26 +166,30 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 			// check if the current process's burst time is 1 to add it to the fininshed vector
 			if(ptemp.burst_time == 1)
 			{
+				btime ++; // increase the burst time to be used by the next process
+
 				ptemp.end_time = btime; // set then end time as the current total burst time before pushing the process to the fininshed queue
 
 				vec.push_back(ptemp); // push back to fininshed process queue (vector vec)
 
-				btime ++; // increase the burst time to be used by the next process
 			}
 			// if not, proceed
 			else
 			{
+
 				// increament the btime while the currect process's burst time is less than the arrived smallest one's burst time
 				while((ptemp.burst_time <= pq[0].burst_time) && ptemp.burst_time)
 				{
+
 					if(pq[0].flag && (ptemp.burst_time == pq[0].burst_time))
 					{
-					 	pq[0].start_time = btime;
+					 	pq[0].start_time = btime+1;
 
 					 	pq[0].flag = false;
 
 					 	pq[0].response_time = pq[0].start_time - pq[0].Arrival_Time; // calculate the response time
 					}
+					
 					btime++;
 
 					while(processes[i].Arrival_Time <= btime && i+1 < num_line)
@@ -195,8 +198,8 @@ Metrics SRTF(Metrics srtf, vector<Process> p)
 
 							sort(pq.begin(),pq.end(), Sort_burstTime);
 						}
-
-					ptemp.burst_time--;
+					
+					ptemp.burst_time--;		
 				}
 				// if process finished push it in the finished vector
 				if(ptemp.burst_time == 0)
