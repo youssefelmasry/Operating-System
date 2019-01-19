@@ -7,4 +7,5 @@ Here are the implementation of five scheduler policies which are <br>
 5- earliest deadline first (EDF) - preemptive without period <br><br>
 Each one is in a file, and all of them are in scheduler file
 <h2> constraints </h2>
-This scheduler assums that the arrival time is in order
+This scheduler assums that the arrival time is in order<br>
+compile with c++11 
